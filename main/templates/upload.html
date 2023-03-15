@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>File Upload</title>
+  </head>
+  <style>
+        #Progress_Status {
+          //width: 90%;
+          margin-top: 5px;
+          background-color: #ddd;
+        }
+        #myprogressBar {
+          width: 0%;
+          height: 20px;
+          background-color: #4CAF50;
+        }
+
+        {% include 'style.html' %}
+
+        /* Add some style to the form */
+      form {
+        background-color: #f2f2f2;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+        //margin: 50px auto;
+        width: 500px;
+      }
+
+      h2 {
+        text-align: left;
+        margin-bottom: 30px;
+      }
+
+      .form-group {
+        margin-bottom: 25px;
+      }
+
+      label {
+        font-weight: bold;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      input[type="file"] {
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        width: 95%;
+      }
+
+      button[type="submit"] {
+        background-color: #4CAF50;
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        float: right;
+        margin: 20px;
+      }
+
+      button[type="submit"]:hover {
+        background-color: #3e8e41;
+      }
+  </style>
+  <body>
+    {% include 'menu.html' %}
+    <h2>File Upload</h2>
+    <form method="post" enctype="multipart/form-data">
+      <input type="file" name="files" multiple>
+      <input onclick="update()" type="submit" value="Upload">
+      <p>
+        <div id="Progress_Status">
+        <div id="myprogressBar"></div>
+      </div>
+      </p>
+
+    </form>
+
+
+    <script>
+        function update() {
+            var element = document.getElementById("myprogressBar");
+            var width = 0;
+            var identity = setInterval(scene, 10);
+
+            function scene() {
+              if (width >= 100) {
+                  clearInterval(identity);
+              } else {
+                  width++;
+                  element.style.width = width + '%';
+              }
+            }
+
+        }
+    </script>
+{% include 'footer.html' %}
+  </body>
+</html>

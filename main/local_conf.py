@@ -1,0 +1,2 @@
+DIR_PATH='.'
+PAGES = [1]

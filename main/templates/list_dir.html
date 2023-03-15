@@ -1,0 +1,52 @@
+<html>
+  <head>
+    <title>Files</title>
+    <style>
+      {% include 'style.html' %}
+
+      ul.file-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    ul.file-list li {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    ul.file-list li i {
+      font-size: 18px;
+      margin-right: 10px;
+    }
+
+    ul.file-list li a {
+      text-decoration: none;
+      color: #333;
+      font-weight: bold;
+    }
+
+    </style>
+  </head>
+  <body>
+    {% include 'menu.html' %}
+    <h2>
+      {% if path == 'pdf' %}
+        <p>PDF Files</p>
+      {% elif path == 'msg' %}
+        <p>MSG Files</p>
+      {% else %}
+        <p>Result CSV/pdf.zip Files</p>
+      {% endif %}
+    </h2>
+    <ul class="file-list">
+      {% for file in files %}
+        <li><a href="{{ url_for('open_file', path=path, filename=file) }}">{{ file }}</a> </li>
+      {% endfor %}
+    </ul>
+
+  {% include 'footer.html' %}
+  </body>
+</html>

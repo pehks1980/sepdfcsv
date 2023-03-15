@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>PDF to CSV Processor </title>
+    <style>
+      {% include 'style.html' %}
+    .container {
+      //display: flex;
+      //align-items: center;
+      //height: 50vh;
+      margin-top:20px;
+    }
+
+    .image-container {
+      position: relative;
+    }
+
+    img {
+      max-width: 30%;
+      border: 10px solid #fff;
+      box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+      border-radius: 5px;
+    }
+
+    .shadow {
+      //position: absolute;
+      top: 10px;
+      left: 10px;
+      bottom: 10px;
+      right: 10px;
+      background: #fff;
+      opacity: 0.7;
+    }
+
+    </style>
+  </head>
+  <body>
+    {% include 'menu.html' %}
+
+    <div class="container">
+      <div class="image-container">
+          <img src="static/pdf-to-csv.jpg" alt="Image">
+          <div class="shadow"></div>
+      </div>
+    </div>
+
+    {% include 'footer.html' %}
+
+  </body>
+</html>

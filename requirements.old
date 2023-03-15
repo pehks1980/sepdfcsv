@@ -1,0 +1,17 @@
+asgiref==3.6.0
+cffi==1.15.1
+charset-normalizer==3.0.1
+click==8.1.3
+cryptography==39.0.0
+Flask==2.0.3
+gunicorn==20.1.0
+h11==0.14.0
+itsdangerous==2.1.2
+Jinja2==3.1.2
+MarkupSafe==2.1.2
+pdfminer==20191125
+pdfminer.six==20221105
+pycparser==2.21
+pycryptodome==3.17
+uvicorn==0.20.0
+Werkzeug==2.2.2
