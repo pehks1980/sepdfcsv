@@ -1,4 +1,5 @@
 import glob
+import json
 import time
 import zipfile
 from datetime import datetime
@@ -6,6 +7,7 @@ import os
 import re
 import csv
 import semsgpdf
+import mycache
 
 from local_conf import PAGES
 from pdfminer.high_level import extract_text
@@ -108,10 +110,17 @@ def save_csv(save_path_name, save_dict_csv):
         print("I/O error")
 
 
-def process_pdfs():
+def process_pdfs(thread_id):
+    #global exporting_threads
     # setup logging
 
-    # get files from a path
+    # set progress
+
+
+    # exporting_thread = mc.get(str(thread_id))
+    # exporting_thread = eval(exporting_thread.decode())
+    # exporting_thread['progress'] = 25
+    # mc.set(str(thread_id), exporting_thread)
 
     #save_path = os.getcwd()
     # --спускаемся в директорию--------------------------------------------------------------------^
@@ -120,12 +129,15 @@ def process_pdfs():
 
     # Getting the list of directories
 
-    semsgpdf.process_msg()
+    semsgpdf.process_msg(thread_id)
+    #get cache connect
+    mc = mycache.create_client()
     # Use the glob module to search for .pdf files in the folder
     pdf_dir = glob.glob(dir_path + "/*.pdf")
     # Checking if the list is empty or not
     if len(pdf_dir) == 0:
         print("Empty pdf directory dont process pdf folder")
+        mycache.update_progress(mc, thread_id, 100)
         return
     else:
         print("Not empty pdf directory, process pdfs folder")
@@ -147,12 +159,22 @@ def process_pdfs():
 
     print(f'pdf файлов в директории: {len(pdf_files)}')
     save_dict_csv = {}
+    #progrsse bar
+    dx = float(50 / len(pdf_files))
+    progress = 50
+
     # process files fill a dictionary
     for idx, item_file in enumerate(pdf_files):
         if not os.path.isdir(item_file):
             try:
                 with open(item_file, 'rb') as f:
                     item_file_text = extract_text(f)
+                    # update progress bar
+                    progress_new = 50 + int(dx * idx)
+                    if progress_new > progress:
+                        mycache.update_progress(mc, thread_id, progress_new)
+                        #time.sleep(0.5)
+                        progress = progress_new
 
             except Exception as err:
                 print(f'Ошибка открытия файла: {item_file}')
@@ -215,6 +237,7 @@ def process_pdfs():
 
             print(f'\nУдален фaйл: {item_file} номер: {idx+1}')
 
+    mycache.update_progress(mc, thread_id, 100)
     os.chdir(initial_path)
 
 

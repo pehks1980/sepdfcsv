@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Processing</title>
+  </head>
+  <style>
+        #Progress_Status {
+          //width: 90%;
+          margin-top: 5px;
+          background-color: #ddd;
+        }
+        #myprogressBar {
+          width: 0%;
+          height: 20px;
+          background-color: #4CAF50;
+        }
+
+        #row {}
+
+        {% include 'style.html' %}
+
+      h2 {
+        text-align: left;
+        margin-bottom: 30px;
+      }
+
+      label {
+        font-weight: bold;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      button{
+        background-color: #4CAF50;
+        color: white;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        float: left;
+        margin: 42px;
+      }
+
+      button:hover {
+        background-color: #3e8e41;
+      }
+  </style>
+  <body>
+    {% include 'menu.html' %}
+
+    <h2>Process Files</h2>
+
+      <p>
+        <div id="Progress_Status">
+
+            <div class='row'>
+                <button id='startThread' class='btn btn-primary'>Start Process</button>
+                <div style='clear:both'></div>
+            </div>
+
+            <div class='row'>
+                <div id='thread_msg'></div>
+            </div>
+
+            <div id="myprogressBar"></div>
+        </div>
+      </p>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" ></script>
+    <script>
+         $(document).ready(function(){
+            $('#startThread').on('click',function(){
+                $.ajax({
+                    type: "GET",
+                    cache: false,
+                    url: "/startproc",
+                    dataType: "json",
+                    success: function(data) {
+                        var msg = $('<div id=" '+ data.id +'">').text('Task ' + data.id + ' working')
+                        $('#thread_msg').append(msg)
+                        var i = 0;
+                        var element = document.getElementById("myprogressBar");
+                        //var width = 0;
+                        var threadInterval = setInterval(function(){
+
+                            checkTask("/progress/" + data.id, function(check){
+                                console.log(check.progress);
+                                if( parseInt(check.progress) >= 100 ){
+                                    msg.text('Task ' + data.id + ' succeeded.')
+                                    $('#thread_msg').append(msg)
+                                    element.style.width = '100' + '%';
+                                    window.clearInterval(threadInterval)
+                                } else {
+                                    msg.text('Task ' + data.id + ' progress ' + check.progress)
+                                    $('#thread_msg').append(msg)
+                                    element.style.width = check.progress + '%';
+                                }
+
+                                i++
+                            })
+                        },1000)
+                    }
+                })
+            })
+
+            function checkTask(url,cb){
+                $.ajax({
+                    type: "GET",
+                    cache: false,
+                    url: url,
+                    dataType: "json",
+                    success: function(data) {
+                        cb(data)
+                    }
+                })
+            }
+        })
+        function update() {
+            var element = document.getElementById("myprogressBar");
+            var width = 0;
+            var identity = setInterval(scene, 10);
+
+            function scene() {
+              if (width >= 100) {
+                  clearInterval(identity);
+              } else {
+                  width++;
+                  element.style.width = width + '%';
+              }
+            }
+
+        }
+    </script>
+{% include 'footer.html' %}
+  </body>
+</html>
