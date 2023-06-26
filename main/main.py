@@ -1,9 +1,6 @@
-import json
 import random
 import signal
 import threading
-from time import sleep
-
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file
 import os
 
@@ -21,10 +18,14 @@ import mycache
 class ExportingThread(threading.Thread):
     def __init__(self, thread_id):
         self.progress = 0
+        self.mode = ''
         self.thread_id = thread_id
         # Get the memcached client object
         client = mycache.create_client()
-        my_thread = {"progress": self.progress, }
+        my_thread = {
+            "progress": self.progress,
+            "mode": self.mode,
+        }
 
         # Store the dictionary in memcached with a key "my_key" for 60 seconds
         client.set(str(thread_id), my_thread)
@@ -55,7 +56,7 @@ def index():
 # result list dir
 @app.route('/<path>')
 def list_result(path):
-    if path != 'result' and path != 'pdf' and path != 'msg':
+    if path not in ('result', 'pdf', 'msg'):  # != 'result' and path != 'pdf' and path != 'msg':
         return render_template("index.html")
     initial = os.getcwd()
     os.chdir(initial)
@@ -108,12 +109,15 @@ def progress(thread_id):
     if exporting_thread:
         exporting_thread = eval(exporting_thread.decode())
         progress = exporting_thread.get('progress')
+        mode = exporting_thread.get('mode')
         return jsonify(
             progress=str(progress),
+            mode=mode,
         )
     else:
         return jsonify(
             progress='err',
+            mode='err',
         )
 
 
@@ -150,7 +154,6 @@ def upload():
 
 def receiveSignal(signalNumber, frame):
     print('Received:', signalNumber)
-
 
 
 signal.signal(signal.SIGTERM, receiveSignal)

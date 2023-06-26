@@ -128,7 +128,7 @@ def process_pdfs(thread_id):
     save_path = os.path.join(os.getcwd(), 'result')  # сюда передаем название результ директории
 
     # Getting the list of directories
-
+    # process if .msg first!
     semsgpdf.process_msg(thread_id)
     #get cache connect
     mc = mycache.create_client()
@@ -172,7 +172,7 @@ def process_pdfs(thread_id):
                     # update progress bar
                     progress_new = 50 + int(dx * idx)
                     if progress_new > progress:
-                        mycache.update_progress(mc, thread_id, progress_new)
+                        mycache.update_progress(mc, thread_id, progress_new, f' pdf file: {idx+1}')
                         #time.sleep(0.5)
                         progress = progress_new
 

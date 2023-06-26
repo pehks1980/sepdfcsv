@@ -46,6 +46,7 @@ def process_msg(thread_id):
     dx = float(50/len(msg_files))
     progress = 0
     mc = mycache.create_client()
+    mode = ' unpacking pdf from msg file:'
     for idx, item_file in enumerate(msg_files):
         if not os.path.isdir(item_file):
             try:
@@ -71,8 +72,8 @@ def process_msg(thread_id):
                     #update progress bar
                     progress_new = int(dx*idx)
                     if progress_new > progress:
-                        mycache.update_progress(mc, thread_id, progress_new)
-                        #time.sleep(0.5)
+                        mycache.update_progress(mc, thread_id, progress_new, f'{mode} {idx+1}')
+                        #time.sleep(1)
                         progress = progress_new
 
             except Exception as err:

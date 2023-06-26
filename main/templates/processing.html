@@ -66,7 +66,7 @@
         </div>
       </p>
 
-    <script src="https://code.jquery.com/jquery-3.3.1.min.js" ></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
     <script>
          $(document).ready(function(){
             $('#startThread').on('click',function(){
@@ -84,21 +84,22 @@
                         var threadInterval = setInterval(function(){
 
                             checkTask("/progress/" + data.id, function(check){
-                                console.log(check.progress);
-                                if( parseInt(check.progress) >= 100 ){
-                                    msg.text('Task ' + data.id + ' succeeded.')
-                                    $('#thread_msg').append(msg)
-                                    element.style.width = '100' + '%';
-                                    window.clearInterval(threadInterval)
-                                } else {
-                                    msg.text('Task ' + data.id + ' progress ' + check.progress)
-                                    $('#thread_msg').append(msg)
-                                    element.style.width = check.progress + '%';
-                                }
+                                    console.log(check.progress);
+                                    console.log(check.mode);
+                                    if( parseInt(check.progress) >= 100 ){
+                                        msg.text('Task ' + data.id + ' succeeded.')
+                                        $('#thread_msg').append(msg)
+                                        element.style.width = '100' + '%';
+                                        window.clearInterval(threadInterval)
+                                    } else {
+                                        msg.text('Task ' + data.id + ' progress ' + check.progress + '% ' + check.mode)
+                                        $('#thread_msg').append(msg)
+                                        element.style.width = check.progress + '%';
+                                    }
 
-                                i++
-                            })
-                        },1000)
+                                    i++
+                                })
+                        }, 1000)
                     }
                 })
             })
