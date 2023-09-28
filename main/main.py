@@ -63,8 +63,22 @@ def list_result(path):
     dir_path = os.path.join(os.getcwd(), path)
     directory = os.listdir(dir_path)
     ext = ('.csv', '.pdf', '.msg', '.zip')
-    files = sorted([file for file in directory if file.endswith(ext)], reverse=True)
-    return render_template('list_dir.html', path=path, files=files)
+    file_creation_dates = []
+    # Iterate through the files and get their creation dates
+    for file_name in directory:
+        if file_name.endswith(ext):
+            file_path = os.path.join(dir_path, file_name)
+
+            # Check if the file exists (in case of broken symlinks or other issues)
+            if os.path.exists(file_path):
+                creation_time = os.path.getctime(file_path)
+                file_creation_dates.append((file_name, creation_time))
+
+    # Sort the list of files based on their creation dates
+    files = sorted(file_creation_dates, key=lambda x: x[1], reverse=True)
+    files_sorted = [file[0] for file in files]
+    #files = sorted([file for file in directory if file.endswith(ext)], reverse=True)
+    return render_template('list_dir.html', path=path, files=files_sorted)
 
 
 # open a file from link
