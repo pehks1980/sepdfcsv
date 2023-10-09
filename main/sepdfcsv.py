@@ -30,21 +30,15 @@ def find_values(text_pdf):
     due_amo_p = re.compile(r"^Total Due\n+\$(\d+\.\d+)", re.M)
     due_amount = due_amo_p.findall(text_pdf)
 
-
-
     # 3 find Entry No: AEPFC3EJN,
     # "^Entry No:\s+([A-Z0-9]+)"
 
     entry_no_p = re.compile(r"^Entry No:\s+([A-Z0-9]+)", re.M)
     entry_no = entry_no_p.findall(text_pdf)
 
-
-
     #4 "Reference:\s+(\d+)"
     reference_p = re.compile(r"^Reference:\s+(\d+)", re.M)
     reference = reference_p.findall(text_pdf)
-
-
 
     # 5 find HAWB: 1Z03831204995 48616
     # "HAWB:\s+([A-Z0-9]+)\n([A-Z0-9]+)"
@@ -58,30 +52,12 @@ def find_values(text_pdf):
         hawb_p = re.compile(r"HAWB:\s+([A-Z0-9]+)", re.M)
         hawb_values = hawb_p.findall(text_pdf)
 
-    if hawb_values:
-        hawb_value = ''.join(hawb_values[0])
-    else:
-        hawb_value = 'error read'
-
-    if invoice_no:
-        _invoice_no = invoice_no[0]
-    else:
-        _invoice_no = 'error read'
-
-    if due_amount:
-        _due_amount = due_amount[0]
-    else:
-        _due_amount = 'error read'
-
-    if entry_no:
-        _entry_no = entry_no[0]
-    else:
-        _entry_no = 'error read'
-
-    if reference:
-        _reference = reference[0]
-    else:
-        _reference = 'error read'
+    str_err = 'error read'
+    hawb_value = ''.join(hawb_values[0]) if hawb_values else str_err
+    _invoice_no = invoice_no[0] if invoice_no else str_err
+    _due_amount = due_amount[0] if due_amount else str_err
+    _entry_no = entry_no[0] if entry_no else str_err
+    _reference = reference[0] if reference else str_err
 
     print('inv_no=', _invoice_no)
     print('due_amount=', _due_amount)
@@ -111,18 +87,6 @@ def save_csv(save_path_name, save_dict_csv):
 
 
 def process_pdfs(thread_id):
-    #global exporting_threads
-    # setup logging
-
-    # set progress
-
-
-    # exporting_thread = mc.get(str(thread_id))
-    # exporting_thread = eval(exporting_thread.decode())
-    # exporting_thread['progress'] = 25
-    # mc.set(str(thread_id), exporting_thread)
-
-    #save_path = os.getcwd()
     # --спускаемся в директорию--------------------------------------------------------------------^
     dir_path = os.path.join(os.getcwd(), 'pdf')  # сюда передаем название исх директории
     save_path = os.path.join(os.getcwd(), 'result')  # сюда передаем название результ директории
@@ -189,7 +153,6 @@ def process_pdfs(thread_id):
 
             #print('text=', item_file_text)
             values = find_values(item_file_text)
-
             save_dict_csv[item_file] = values
 
 
@@ -201,8 +164,6 @@ def process_pdfs(thread_id):
     #file_name_csv = f"{save_path}/result.csv"
     save_csv(file_name_csv, save_dict_csv)
     print(f'\n{datetime.now()} Обработка завершена. Результат в файле {file_name_csv}')
-
-
 
     # zip folder
     folder_name = dir_path
