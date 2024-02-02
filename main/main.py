@@ -8,7 +8,7 @@ import os
 import sepdfcsv
 import mycache1
 
-import flask_profiler
+#import flask_profiler
 
 app = Flask(__name__)
 
@@ -19,21 +19,21 @@ app.config["UPLOAD_MSG_FOLDER"] = "msg"
 
 # You need to declare necessary configuration to initialize
 # flask-profiler as follows:
-app.config["flask_profiler"] = {
-    "enabled": app.config["DEBUG"],
-    "storage": {
-        "engine": "sqlite"
-    },
-    "basicAuth": {
-        "enabled": False,
-        "username": "admin",
-        "password": "admin"
-    },
-    "ignore": [
-        "^/static/.*"
-    ]
-}
-flask_profiler.init_app(app)
+# app.config["flask_profiler"] = {
+#     "enabled": app.config["DEBUG"],
+#     "storage": {
+#         "engine": "sqlite"
+#     },
+#     "basicAuth": {
+#         "enabled": False,
+#         "username": "admin",
+#         "password": "admin"
+#     },
+#     "ignore": [
+#         "^/static/.*"
+#     ]
+# }
+# flask_profiler.init_app(app)
 
 
 
