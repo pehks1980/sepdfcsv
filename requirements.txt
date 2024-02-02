@@ -1,5 +1,5 @@
 asgiref==3.6.0
-backports.zoneinfo==0.2.1
+backports.zoneinfo==0.2.1;python_version<"3.9" #backports.zoneinfo==0.2.1
 beautifulsoup4==4.11.2
 cffi==1.15.1
 chardet==5.1.0

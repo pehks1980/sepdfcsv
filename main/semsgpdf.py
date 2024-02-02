@@ -4,7 +4,7 @@ import extract_msg
 import time
 from datetime import datetime
 
-import mycache
+import mycache1
 
 
 def process_msg(thread_id):
@@ -17,12 +17,12 @@ def process_msg(thread_id):
     dir_path = os.path.join(os.getcwd(), 'msg')  # сюда передаем название исх директории
     save_path = os.path.join(os.getcwd(), 'pdf')  # сюда передаем название результ директории
     #connect to cache
-    mc = mycache.create_client()
+    mc = mycache1.create_client()
     msg_dir = glob.glob(dir_path + "/*.msg")
     # Checking if the list is empty or not
     if len(msg_dir) == 0:
         print("Empty msg directory, dont process msg folder..")
-        mycache.update_progress(mc, thread_id, 50)
+        mycache1.update_progress(mc, thread_id, 50)
         return
 
     initial_path = os.getcwd()
@@ -45,7 +45,7 @@ def process_msg(thread_id):
     # process files fill a dictionary
     dx = float(50/len(msg_files))
     progress = 0
-    mc = mycache.create_client()
+    mc = mycache1.create_client()
     mode = ' unpacking pdf from msg file:'
     for idx, item_file in enumerate(msg_files):
         if not os.path.isdir(item_file):
@@ -72,7 +72,7 @@ def process_msg(thread_id):
                     #update progress bar
                     progress_new = int(dx*idx)
                     if progress_new > progress:
-                        mycache.update_progress(mc, thread_id, progress_new, f'{mode} {idx+1}')
+                        mycache1.update_progress(mc, thread_id, progress_new, f'{mode} {idx+1}')
                         #time.sleep(1)
                         progress = progress_new
 

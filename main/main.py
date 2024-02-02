@@ -1,3 +1,4 @@
+import json
 import random
 import signal
 import threading
@@ -5,14 +6,39 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 import os
 
 import sepdfcsv
+import mycache1
+
+import flask_profiler
 
 app = Flask(__name__)
+
 app.debug = False
 
 app.config["UPLOAD_PDF_FOLDER"] = "pdf"
 app.config["UPLOAD_MSG_FOLDER"] = "msg"
 
-import mycache
+# You need to declare necessary configuration to initialize
+# flask-profiler as follows:
+app.config["flask_profiler"] = {
+    "enabled": app.config["DEBUG"],
+    "storage": {
+        "engine": "sqlite"
+    },
+    "basicAuth": {
+        "enabled": False,
+        "username": "admin",
+        "password": "admin"
+    },
+    "ignore": [
+        "^/static/.*"
+    ]
+}
+flask_profiler.init_app(app)
+
+
+
+
+# import mycache
 
 
 class ExportingThread(threading.Thread):
@@ -21,14 +47,14 @@ class ExportingThread(threading.Thread):
         self.mode = ''
         self.thread_id = thread_id
         # Get the memcached client object
-        client = mycache.create_client()
+        client = mycache1.create_client()
         my_thread = {
             "progress": self.progress,
             "mode": self.mode,
         }
-
+        str_mythread = json.dumps(my_thread)
         # Store the dictionary in memcached with a key "my_key" for 60 seconds
-        client.set(str(thread_id), my_thread)
+        client.set(str(thread_id), str_mythread)
         super().__init__()
 
     def run(self):
@@ -77,7 +103,7 @@ def list_result(path):
     # Sort the list of files based on their creation dates
     files = sorted(file_creation_dates, key=lambda x: x[1], reverse=True)
     files_sorted = [file[0] for file in files]
-    #files = sorted([file for file in directory if file.endswith(ext)], reverse=True)
+    # files = sorted([file for file in directory if file.endswith(ext)], reverse=True)
     return render_template('list_dir.html', path=path, files=files_sorted)
 
 
@@ -118,12 +144,15 @@ def startprocess():
 
 @app.route('/progress/<int:thread_id>')
 def progress(thread_id):
-    mc = mycache.create_client()
-    exporting_thread = mc.get(str(thread_id))
-    if exporting_thread:
-        exporting_thread = eval(exporting_thread.decode())
-        progress = exporting_thread.get('progress')
-        mode = exporting_thread.get('mode')
+    mc = mycache1.create_client()
+    try:
+        exporting_thread = mc.get(str(thread_id))
+        data_dict = json.loads(exporting_thread['value'])
+    except Exception as e:
+        data_dict = {}
+    if data_dict:
+        progress = data_dict.get('progress')
+        mode = data_dict.get('mode')
         return jsonify(
             progress=str(progress),
             mode=mode,

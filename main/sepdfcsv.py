@@ -7,7 +7,7 @@ import os
 import re
 import csv
 import semsgpdf
-import mycache
+import mycache1
 
 from local_conf import PAGES
 from pdfminer.high_level import extract_text
@@ -95,13 +95,13 @@ def process_pdfs(thread_id):
     # process if .msg first!
     semsgpdf.process_msg(thread_id)
     #get cache connect
-    mc = mycache.create_client()
+    mc = mycache1.create_client()
     # Use the glob module to search for .pdf files in the folder
     pdf_dir = glob.glob(dir_path + "/*.pdf")
     # Checking if the list is empty or not
     if len(pdf_dir) == 0:
         print("Empty pdf directory dont process pdf folder")
-        mycache.update_progress(mc, thread_id, 100)
+        mycache1.update_progress(mc, thread_id, 100)
         return
     else:
         print("Not empty pdf directory, process pdfs folder")
@@ -136,7 +136,7 @@ def process_pdfs(thread_id):
                     # update progress bar
                     progress_new = 50 + int(dx * idx)
                     if progress_new > progress:
-                        mycache.update_progress(mc, thread_id, progress_new, f' pdf file: {idx+1}')
+                        mycache1.update_progress(mc, thread_id, progress_new, f' pdf file: {idx+1}')
                         #time.sleep(0.5)
                         progress = progress_new
 
@@ -198,7 +198,7 @@ def process_pdfs(thread_id):
 
             print(f'\nУдален фaйл: {item_file} номер: {idx+1}')
 
-    mycache.update_progress(mc, thread_id, 100)
+    mycache1.update_progress(mc, thread_id, 100)
     os.chdir(initial_path)
 
 
