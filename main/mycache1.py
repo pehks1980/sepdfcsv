@@ -18,9 +18,9 @@ class KeyValueStore:
     def initialize(self, url):
         self.api_url = url
 
-    def set(self, key, value):
+    def set(self, key, value, expiry="-1"):
         url = f"{self.api_url}/put/"
-        data = {"key": key, "value": value}
+        data = {"key": key, "value": value, "expiry": expiry}
         response = self._send_post_request(url, data)
         return response
 
@@ -49,7 +49,7 @@ def create_client():
 key_value_store = KeyValueStore(CACHE_URL)
 
 # Set example
-set_response = key_value_store.set("bla", "value1")
+set_response = key_value_store.set("bla", "value1", "3600")
 print(f"Set Response: {set_response}")
 
 # Get example
