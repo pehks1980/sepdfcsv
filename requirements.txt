@@ -12,7 +12,12 @@ distro==1.8.0
 easygui==0.98.3
 ebcdic==1.1.1
 extract-msg==0.39.2
-Flask==2.0.3
+Flask==3.0.2
+Flask-HTTPAuth==4.8.0
+flask-profiler==1.8.1
+Flask-Session==0.6.0
+greenlet==2.0.2
+greenletio==0.9.0
 gunicorn==20.1.0
 h11==0.14.0
 hashring==1.5.1
@@ -46,6 +51,6 @@ tabula-py==2.6.0
 tzdata==2022.7
 tzlocal==4.2
 uvicorn==0.20.0
-Werkzeug==2.2.2
+Werkzeug>=3.0.0
 requests==2.31.0
 pandas==1.5.3

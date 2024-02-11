@@ -2,50 +2,37 @@ import json
 import random
 import signal
 import threading
-from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file
+import uuid
+
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file, session
+from flask_session import Session
 import os
 
 import sepdfcsv
 import mycache1
 
-#import flask_profiler
-
 app = Flask(__name__)
-
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_PERMANENT'] = False
+Session(app)
 app.debug = False
+
+# from werkzeug.middleware.profiler import ProfilerMiddleware
 
 app.config["UPLOAD_PDF_FOLDER"] = "pdf"
 app.config["UPLOAD_MSG_FOLDER"] = "msg"
-
-# You need to declare necessary configuration to initialize
-# flask-profiler as follows:
-# app.config["flask_profiler"] = {
-#     "enabled": app.config["DEBUG"],
-#     "storage": {
-#         "engine": "sqlite"
-#     },
-#     "basicAuth": {
-#         "enabled": False,
-#         "username": "admin",
-#         "password": "admin"
-#     },
-#     "ignore": [
-#         "^/static/.*"
-#     ]
-# }
-# flask_profiler.init_app(app)
+app.config["CACHE_URL"] = "http://127.0.0.1:8000"
 
 
-
-
+# app.wsgi_app = ProfilerMiddleware(app.wsgi_app,restrictions=[5], profile_dir='.')
 # import mycache
 
-
 class ExportingThread(threading.Thread):
-    def __init__(self, thread_id):
+    def __init__(self, thread_id, sess_id):
         self.progress = 0
         self.mode = ''
         self.thread_id = thread_id
+        self.sess_id = sess_id
         # Get the memcached client object
         client = mycache1.create_client()
         my_thread = {
@@ -59,34 +46,34 @@ class ExportingThread(threading.Thread):
 
     def run(self):
         # Your exporting stuff goes here ...
-        sepdfcsv.process_pdfs(self.thread_id)
-        # mc = mycache.create_client()
-        # for i in range(5,11):
-        #    sleep(1)
-        #    mycache.update_progress(mc,self.thread_id,i*10)
-        # exporting_thread = mc.get(str(self.thread_id))
-        # exporting_thread = mc.get(str(self.thread_id))
-        # exporting_thread = eval(exporting_thread.decode())
-        # if exporting_thread:
-        #     exporting_thread['progress'] += 10
-        #     mc.set(str(self.thread_id),exporting_thread)
-        #     self.progress = exporting_thread['progress']
+        sepdfcsv.process_pdfs(self.thread_id, self.sess_id)
 
 
 # index
 @app.route("/")
 def index():
+    sess_number = random.randint(1000, 2000)  # uuid.uuid4()
+    if 'sid' not in session:
+        session['sid'] = f"{sess_number}"
+        # initial = os.getcwd()
+        ##os.chdir(initial)
+        for path in ('result', 'pdf', 'msg'):
+            targ_path = os.path.join(os.getcwd(), path, f"_{session['sid']}")
+            os.mkdir(targ_path)
     return render_template("index.html")
 
 
 # result list dir
 @app.route('/<path>')
 def list_result(path):
-    if path not in ('result', 'pdf', 'msg'):  # != 'result' and path != 'pdf' and path != 'msg':
+    if 'sid' not in session:
+        return render_template("index.html")
+    if path not in ('result', 'pdf', 'msg'):
+        # != 'result' and path != 'pdf' and path != 'msg':
         return render_template("index.html")
     initial = os.getcwd()
     os.chdir(initial)
-    dir_path = os.path.join(os.getcwd(), path)
+    dir_path = os.path.join(os.getcwd(), path, f"_{session['sid']}")
     directory = os.listdir(dir_path)
     ext = ('.csv', '.pdf', '.msg', '.zip')
     file_creation_dates = []
@@ -111,10 +98,10 @@ def list_result(path):
 @app.route("/<path>/<filename>")
 def open_file(path, filename):
     try:
-        if path == 'result':
-            return send_file(f"result/{filename}", as_attachment=True)
-        if path == 'pdf':
-            return send_file(f"pdf/{filename}", as_attachment=True)
+        if path == 'result' and 'sid' in session:
+            return send_file(f"result/_{session['sid']}/{filename}", as_attachment=True)
+        if path == 'pdf' and 'sid' in session:
+            return send_file(f"pdf/_{session['sid']}/{filename}", as_attachment=True)
 
     except Exception as e:
         return str(e)
@@ -133,12 +120,17 @@ def process():
 
 @app.route("/startproc")
 def startprocess():
-    thread_id = random.randint(0, 10000)
-    exporting_thread = ExportingThread(thread_id)
-    exporting_thread.start()
+    if "sid" in session:
+        thread_id = random.randint(0, 10000)
+        exporting_thread = ExportingThread(thread_id, f"{session['sid']}")
+        exporting_thread.start()
+
+        return jsonify(
+            id=thread_id,
+        )
 
     return jsonify(
-        id=thread_id,
+        id=-1,
     )
 
 
@@ -164,13 +156,6 @@ def progress(thread_id):
         )
 
 
-# run
-# @app.route("/run")
-# async def run_proc():
-#    result = await do_process_pdf()
-#    return jsonify(result=result)
-
-
 # upload selected pdf files
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
@@ -184,11 +169,11 @@ def upload():
             if file.filename == "":
                 return redirect(request.url)
 
-            if file and file.filename.endswith(".pdf"):
-                file.save(os.path.join(app.config["UPLOAD_PDF_FOLDER"], file.filename))
+            if file and file.filename.endswith(".pdf") and 'sid' in session:
+                file.save(os.path.join(app.config["UPLOAD_PDF_FOLDER"], f"_{session['sid']}",file.filename))
 
-            if file and file.filename.endswith(".msg"):
-                file.save(os.path.join(app.config["UPLOAD_MSG_FOLDER"], file.filename))
+            if file and file.filename.endswith(".msg") and 'sid' in session:
+                file.save(os.path.join(app.config["UPLOAD_MSG_FOLDER"], f"_{session['sid']}",file.filename))
 
         return redirect(url_for("index"))
 

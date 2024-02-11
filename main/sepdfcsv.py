@@ -86,14 +86,14 @@ def save_csv(save_path_name, save_dict_csv):
         print("I/O error")
 
 
-def process_pdfs(thread_id):
+def process_pdfs(thread_id, sess_id):
     # --спускаемся в директорию--------------------------------------------------------------------^
-    dir_path = os.path.join(os.getcwd(), 'pdf')  # сюда передаем название исх директории
-    save_path = os.path.join(os.getcwd(), 'result')  # сюда передаем название результ директории
+    dir_path = os.path.join(os.getcwd(), 'pdf', f"_{sess_id}")  # сюда передаем название исх директории
+    save_path = os.path.join(os.getcwd(), 'result', f"_{sess_id}")  # сюда передаем название результ директории
 
     # Getting the list of directories
     # process if .msg first!
-    semsgpdf.process_msg(thread_id)
+    semsgpdf.process_msg(thread_id, sess_id)
     #get cache connect
     mc = mycache1.create_client()
     # Use the glob module to search for .pdf files in the folder
@@ -136,7 +136,7 @@ def process_pdfs(thread_id):
                     # update progress bar
                     progress_new = 50 + int(dx * idx)
                     if progress_new > progress:
-                        mycache1.update_progress(mc, thread_id, progress_new, f' pdf file: {idx+1}')
+                        mycache1.update_progress(mc, thread_id, progress_new, f' pdf file: {item_file} номер: {idx+1}')
                         #time.sleep(0.5)
                         progress = progress_new
 

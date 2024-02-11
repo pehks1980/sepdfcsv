@@ -7,15 +7,15 @@ from datetime import datetime
 import mycache1
 
 
-def process_msg(thread_id):
+def process_msg(thread_id, sess_id):
     # setup logging
 
     # get files from a path
     #exporting_threads[thread_id].progress = 50
     # save_path = os.getcwd()
     # --спускаемся в директорию--------------------------------------------------------------------^
-    dir_path = os.path.join(os.getcwd(), 'msg')  # сюда передаем название исх директории
-    save_path = os.path.join(os.getcwd(), 'pdf')  # сюда передаем название результ директории
+    dir_path = os.path.join(os.getcwd(), 'msg',f"_{sess_id}")  # сюда передаем название исх директории
+    save_path = os.path.join(os.getcwd(), 'pdf',f"_{sess_id}")  # сюда передаем название результ директории
     #connect to cache
     mc = mycache1.create_client()
     msg_dir = glob.glob(dir_path + "/*.msg")

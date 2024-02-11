@@ -1,8 +1,7 @@
 import requests
 import json
 
-#from main import CACHE_URL
-CACHE_URL="http://127.0.0.1:8000"
+
 
 class KeyValueStore:
     _instance = None
@@ -40,16 +39,16 @@ class KeyValueStore:
             return None
 
 
-def create_client():
+def create_client(CACHE_URL="http://127.0.0.1:8000"):
     client = KeyValueStore(CACHE_URL)
     return client
 
 
 # Example Usage:
-key_value_store = KeyValueStore(CACHE_URL)
+key_value_store = KeyValueStore("http://127.0.0.1:8000")
 
 # Set example
-set_response = key_value_store.set("bla", "value1", "3600")
+set_response = key_value_store.set("bla", "value1", "60")
 print(f"Set Response: {set_response}")
 
 # Get example
