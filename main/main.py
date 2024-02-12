@@ -3,6 +3,7 @@ import random
 import signal
 import threading
 import uuid
+from datetime import timedelta
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file, session
 from flask_session import Session
@@ -12,13 +13,23 @@ import sepdfcsv
 import mycache1
 
 app = Flask(__name__)
+# Check if FLASK_SECRET_KEY environment variable is set
+if 'FLASK_SECRET_KEY' not in os.environ:
+    print("ERROR: FLASK_SECRET_KEY environment variable is not set. Please set the secret key and try again.")
+    exit(1)
+
+# Set Flask secret key from environment variable
+app.secret_key = os.environ['FLASK_SECRET_KEY']
+
+# Set session lifetime to 1 hour (3600 seconds)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
+
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = False
 Session(app)
-app.debug = False
+app.debug = True
 
 # from werkzeug.middleware.profiler import ProfilerMiddleware
-
 app.config["UPLOAD_PDF_FOLDER"] = "pdf"
 app.config["UPLOAD_MSG_FOLDER"] = "msg"
 app.config["CACHE_URL"] = "http://127.0.0.1:8000"
@@ -182,10 +193,8 @@ def upload():
 
 def receiveSignal(signalNumber, frame):
     print('Received:', signalNumber)
-
-
-signal.signal(signal.SIGTERM, receiveSignal)
-signal.signal(signal.SIGINT, receiveSignal)
+    signal.signal(signal.SIGTERM, receiveSignal)
+    signal.signal(signal.SIGINT, receiveSignal)
 
 if __name__ == "__main__":
     app.run()

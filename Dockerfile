@@ -46,4 +46,6 @@ RUN chmod +x /gunicorn.sh
 #user needed to run memcached inside container
 RUN adduser -D -g '' user
 EXPOSE 8080
+# Set Flask secret key as environment variable
+ENV FLASK_SECRET_KEY=$FLASK_SECRET_KEY
 ENTRYPOINT ["./gunicorn.sh"]
