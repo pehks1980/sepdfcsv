@@ -70,11 +70,14 @@
     <h2>File Upload</h2>
     <form method="post" enctype="multipart/form-data">
       <input type="file" name="files" multiple>
+      <p>
+        <input type="checkbox" name="mode" value="processing_mode"> Multiple Pages Pdf
+      </p><br>
       <input onclick="update()" type="submit" value="Upload">
       <p>
         <div id="Progress_Status">
-        <div id="myprogressBar"></div>
-      </div>
+          <div id="myprogressBar"></div>
+        </div>
       </p>
 
     </form>

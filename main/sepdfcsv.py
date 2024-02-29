@@ -134,7 +134,7 @@ def save_csv(save_path_name, save_dict_csv, csv_columns):
         print("I/O error")
 
 
-def process_pdfs(thread_id, sess_id):
+def process_pdfs(thread_id, sess_id, sess_mode):
     # --спускаемся в директорию--------------------------------------------------------------------^
     dir_path = os.path.join(os.getcwd(), 'pdf', f"_{sess_id}")  # сюда передаем название исх директории
     save_path = os.path.join(os.getcwd(), 'result', f"_{sess_id}")  # сюда передаем название результ директории
@@ -175,11 +175,14 @@ def process_pdfs(thread_id, sess_id):
     dx = float(50 / len(pdf_files))
     progress = 50
     #if we have file which contains _weekly in filename set mode = 2 (to multiple page pdf processing)
-    mode = 1
+    #mode = 1
+    #get mode from upload form
+    mode = sess_mode
 
     # process files fill a dictionary
     for idx, item_file in enumerate(pdf_files):
         if not os.path.isdir(item_file):
+            #if filename.pdf has _weekly override mode to multiple pages
             tst = item_file.split("_weekly")
             if len(tst[0]) != len(item_file):
                 print("set mode to 2 multipage proc")

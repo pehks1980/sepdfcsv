@@ -39,11 +39,12 @@ app.config["CACHE_URL"] = "http://127.0.0.1:8000"
 # import mycache
 
 class ExportingThread(threading.Thread):
-    def __init__(self, thread_id, sess_id):
+    def __init__(self, thread_id, sess_id, sess_mode):
         self.progress = 0
         self.mode = ''
         self.thread_id = thread_id
         self.sess_id = sess_id
+        self.sess_mode = sess_mode
         # Get the memcached client object
         client = mycache1.create_client()
         my_thread = {
@@ -57,7 +58,7 @@ class ExportingThread(threading.Thread):
 
     def run(self):
         # Your exporting stuff goes here ...
-        sepdfcsv.process_pdfs(self.thread_id, self.sess_id)
+        sepdfcsv.process_pdfs(self.thread_id, self.sess_id, self.sess_mode)
 
 
 # index
@@ -66,6 +67,8 @@ def index():
     sess_number = random.randint(1000, 2000)  # uuid.uuid4()
     if 'sid' not in session:
         session['sid'] = f"{sess_number}"
+        if 'mode' not in session:
+            session['mode'] = 1
         # initial = os.getcwd()
         ##os.chdir(initial)
         for path in ('result', 'pdf', 'msg'):
@@ -131,9 +134,9 @@ def process():
 
 @app.route("/startproc")
 def startprocess():
-    if "sid" in session:
+    if "sid" and "mode" in session:
         thread_id = random.randint(0, 10000)
-        exporting_thread = ExportingThread(thread_id, f"{session['sid']}")
+        exporting_thread = ExportingThread(thread_id, session['sid'], session['mode'])
         exporting_thread.start()
 
         return jsonify(
@@ -175,6 +178,15 @@ def upload():
             return redirect(request.url)
 
         files = request.files.getlist("files")
+        #get mode from a form checkbox
+        processing_mode = request.form.get("mode")
+        # set mode to session - based on the processing mode
+        if processing_mode:
+            # checked - multiple pages mode = 2
+            session['mode'] = 2
+        else:
+            # unchecked - multiple pages mode = 1
+            session['mode'] = 1
 
         for file in files:
             if file.filename == "":
