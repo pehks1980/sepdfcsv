@@ -16,6 +16,54 @@ from pdfminer.high_level import extract_text
 def convert_pdf_txt(name_scan_file, PAGES):
     pass
 
+def find_pages(text_pdf):
+    # /Page 1 of 73\n+([A-Za-z0-9\n -:]+)/gm
+    pages = []
+    page_amount_p = re.compile(r"Page 1 of (\d+)", re.M)
+    page_amount = page_amount_p.findall(text_pdf)
+    if not page_amount:
+        return pages
+
+    for start_page in range(1, int(page_amount[0])-1):
+        pattern = r"Page "+str(start_page)+r" of \d+\n+([A-Za-z0-9\n -:_//\\\',]+)"
+        #r"\b" + str(numb) + r"\d+"
+        page_p = re.compile(pattern, re.M)
+        page = page_p.findall(text_pdf)
+        pages.append(page)
+    return pages
+
+def find_values1(text_pdf):
+    # 1 Tax Invoice No: 10004091259
+    #
+    text_pdf = str(text_pdf)
+
+    invoice_p = re.compile(r"Tax Invoice No:\s+(\d+)", re.M)
+    invoice = invoice_p.findall(text_pdf)
+
+    # 2 Total Outstanding\n+(\$\d+\.\d{2})
+    tot_out_p = re.compile(r"Total Outstanding[\\n]+(\$[,\d]+\.\d{2})", re.M)
+    tot_out = tot_out_p.findall(text_pdf)
+
+    # 3 "House:\n+([A-Z0-9]+)"
+    house_p = re.compile(r"House:[\\n]+([A-Z0-9]+)", re.M)
+    house = house_p.findall(text_pdf)
+
+    # 4 "Reference:\s+(\d+)"
+    reference_p = re.compile(r"Reference:\s+(\d+)", re.M)
+    reference = reference_p.findall(text_pdf)
+
+    str_err = 'error read'
+    _invoice = invoice[0] if invoice else str_err
+    _tot_out = tot_out[0] if tot_out else str_err
+    _house = house[0] if house else str_err
+    _reference = reference[0] if reference else str_err
+
+    return {'invoice': _invoice,
+            'tot_out': _tot_out,
+            # avoid non complete house numbers
+            'house': _house if len(house[0]) > 4 else str_err,
+            'reference': _reference,
+            }
 
 def find_values(text_pdf):
     # 1 find invoice No
@@ -73,8 +121,8 @@ def find_values(text_pdf):
             }
 
 
-def save_csv(save_path_name, save_dict_csv):
-    csv_columns = ['file', 'invoice_no', 'due_amount', 'entry_no', 'hawb', 'reference']
+def save_csv(save_path_name, save_dict_csv, csv_columns):
+
     try:
         with open(save_path_name, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=csv_columns)
@@ -126,10 +174,16 @@ def process_pdfs(thread_id, sess_id):
     #progrsse bar
     dx = float(50 / len(pdf_files))
     progress = 50
+    #if we have file which contains _weekly in filename set mode = 2 (to multiple page pdf processing)
+    mode = 1
 
     # process files fill a dictionary
     for idx, item_file in enumerate(pdf_files):
         if not os.path.isdir(item_file):
+            tst = item_file.split("_weekly")
+            if len(tst[0]) != len(item_file):
+                print("set mode to 2 multipage proc")
+                mode = 2
             try:
                 with open(item_file, 'rb') as f:
                     item_file_text = extract_text(f)
@@ -152,8 +206,18 @@ def process_pdfs(thread_id, sess_id):
            # text_pdf = convert_pdf_txt(name_scan_file, PAGES)
 
             #print('text=', item_file_text)
-            values = find_values(item_file_text)
-            save_dict_csv[item_file] = values
+            #mode = 2
+            if mode == 1:
+                values = find_values(item_file_text)
+                save_dict_csv[item_file] = values
+            else:
+                #text is b/w 'page 1 of 73'
+                pages = find_pages(item_file_text)
+                for num, page in enumerate(pages):
+                    values = find_values1(page)
+                    save_dict_csv[str(num+1)] = values
+                    print(f"num {num+1}\npage\n{page}\n")
+                    print (values)
 
 
     # store dictionary to csv file
@@ -162,7 +226,13 @@ def process_pdfs(thread_id, sess_id):
     file_name_csv = f"{save_path}/result_{timestr}.csv"
 
     #file_name_csv = f"{save_path}/result.csv"
-    save_csv(file_name_csv, save_dict_csv)
+    if mode == 1:
+        csv_columns = ['file', 'invoice_no', 'due_amount', 'entry_no', 'hawb', 'reference']
+    else:
+        file_name_csv = f"{save_path}/result_{timestr}_weekly.csv"
+        csv_columns = ['file', 'invoice', 'tot_out', 'house', 'reference']
+
+    save_csv(file_name_csv, save_dict_csv, csv_columns)
     print(f'\n{datetime.now()} Обработка завершена. Результат в файле {file_name_csv}')
 
     # zip folder
