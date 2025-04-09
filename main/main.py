@@ -32,6 +32,7 @@ app.debug = True
 # from werkzeug.middleware.profiler import ProfilerMiddleware
 app.config["UPLOAD_PDF_FOLDER"] = "pdf"
 app.config["UPLOAD_MSG_FOLDER"] = "msg"
+app.config["UPLOAD_DOC_FOLDER"] = "doc"
 app.config["CACHE_URL"] = "http://127.0.0.1:8000"
 
 
@@ -39,12 +40,13 @@ app.config["CACHE_URL"] = "http://127.0.0.1:8000"
 # import mycache
 
 class ExportingThread(threading.Thread):
-    def __init__(self, thread_id, sess_id, sess_mode):
+    def __init__(self, thread_id, sess_id, sess_mode, sess_file):
         self.progress = 0
         self.mode = ''
         self.thread_id = thread_id
         self.sess_id = sess_id
         self.sess_mode = sess_mode
+        self.sess_file = sess_file
         # Get the memcached client object
         client = mycache1.create_client()
         my_thread = {
@@ -58,7 +60,7 @@ class ExportingThread(threading.Thread):
 
     def run(self):
         # Your exporting stuff goes here ...
-        sepdfcsv.process_pdfs(self.thread_id, self.sess_id, self.sess_mode)
+        sepdfcsv.process_pdfs(self.thread_id, self.sess_id, self.sess_mode, self.sess_file)
 
 
 # index
@@ -69,9 +71,11 @@ def index():
         session['sid'] = f"{sess_number}"
         if 'mode' not in session:
             session['mode'] = 1
+        if 'file' not in session:
+            session['file'] = 'pdf'
         # initial = os.getcwd()
         ##os.chdir(initial)
-        for path in ('result', 'pdf', 'msg'):
+        for path in ('result', 'pdf', 'msg', 'doc'):
             targ_path = os.path.join(os.getcwd(), path, f"_{session['sid']}")
             os.mkdir(targ_path)
     return render_template("index.html")
@@ -82,14 +86,14 @@ def index():
 def list_result(path):
     if 'sid' not in session:
         return render_template("index.html")
-    if path not in ('result', 'pdf', 'msg'):
+    if path not in ('result', 'pdf', 'msg', 'doc'):
         # != 'result' and path != 'pdf' and path != 'msg':
         return render_template("index.html")
     initial = os.getcwd()
     os.chdir(initial)
     dir_path = os.path.join(os.getcwd(), path, f"_{session['sid']}")
     directory = os.listdir(dir_path)
-    ext = ('.csv', '.pdf', '.msg', '.zip')
+    ext = ('.csv', '.pdf', '.msg', '.zip', '.docx')
     file_creation_dates = []
     # Iterate through the files and get their creation dates
     for file_name in directory:
@@ -116,6 +120,8 @@ def open_file(path, filename):
             return send_file(f"result/_{session['sid']}/{filename}", as_attachment=True)
         if path == 'pdf' and 'sid' in session:
             return send_file(f"pdf/_{session['sid']}/{filename}", as_attachment=True)
+        if path == 'doc' and 'sid' in session:
+            return send_file(f"doc/_{session['sid']}/{filename}", as_attachment=True)
 
     except Exception as e:
         return str(e)
@@ -134,9 +140,9 @@ def process():
 
 @app.route("/startproc")
 def startprocess():
-    if "sid" and "mode" in session:
+    if "sid" and "mode" and "file" in session:
         thread_id = random.randint(0, 10000)
-        exporting_thread = ExportingThread(thread_id, session['sid'], session['mode'])
+        exporting_thread = ExportingThread(thread_id, session['sid'], session['mode'], session['file'])
         exporting_thread.start()
 
         return jsonify(
@@ -193,10 +199,15 @@ def upload():
                 return redirect(request.url)
 
             if file and file.filename.endswith(".pdf") and 'sid' in session:
+                session['file'] = 'pdf'
                 file.save(os.path.join(app.config["UPLOAD_PDF_FOLDER"], f"_{session['sid']}",file.filename))
 
             if file and file.filename.endswith(".msg") and 'sid' in session:
                 file.save(os.path.join(app.config["UPLOAD_MSG_FOLDER"], f"_{session['sid']}",file.filename))
+
+            if file and file.filename.endswith(".docx") and 'sid' in session:
+                session['file'] = 'doc'
+                file.save(os.path.join(app.config["UPLOAD_DOC_FOLDER"], f"_{session['sid']}",file.filename))
 
         return redirect(url_for("index"))
 

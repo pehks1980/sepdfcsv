@@ -8,5 +8,9 @@ fi
 
 #run memcached as daemon under user
 #memcached -u user -d
+
+#run my cache-serv as daemon
 /cache-serv/main &
+
+#run flask and gunicorn
 gunicorn --chdir main main:app -w 2 --threads 2 -b 0.0.0.0:8080 --access-logfile '-'

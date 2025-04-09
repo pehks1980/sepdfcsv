@@ -8,6 +8,7 @@ import re
 import csv
 import semsgpdf
 import mycache1
+import docx2txt
 
 from local_conf import PAGES
 from pdfminer.high_level import extract_text
@@ -121,6 +122,45 @@ def find_values(text_pdf):
             }
 
 
+def find_values_doc(text):
+    """
+        Extracts applicant's name, phone, and email from a .docx resume.
+        Smartly filters out organization names (like "Ресторан Нескучный Сад").
+        """
+    # Regex patterns
+    patterns = {
+        # Matches "FirstName LastName" or "FirstName MiddleName LastName" (Russian/English)
+        'name': r'^([А-ЯЁA-Z][а-яёa-z]+(?:\s+[А-ЯЁA-Z][а-яёa-z]+){1,2})(?=\s*$|\s+[Мм]ужчина|[,\n])',
+        'phone': r'(\+7[\s ]?\(?\d{3}\)?[\s ]?\d{3}[\s -]?\d{2}[\s -]?\d{2})',
+        'email': r'([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})'
+    }
+
+    info = {}
+
+    # Extract name (skip dates and organization names)
+    for line in text.split('\n'):
+        line = line.strip()
+        # Skip dates (e.g., "20 февраля 2025")
+        if re.fullmatch(r'^\d{1,2}\s+[А-ЯЁа-яё]+\s+\d{4}\s*$', line):
+            continue
+        # Skip lines with "ресторан", "кафе", etc. (common false positives)
+        if re.search(r'ресторан|кафе|клуб|отель|бар|магазин', line, re.IGNORECASE):
+            continue
+        name_match = re.match(patterns['name'], line)
+        if name_match:
+            info['name'] = name_match.group(1)
+            break
+
+    # Phone and email extraction
+    info['phone'] = re.search(patterns['phone'], text).group(1) if re.search(patterns['phone'], text) else None
+    info['email'] = re.search(patterns['email'], text).group(1) if re.search(patterns['email'], text) else None
+
+    #str_err = 'error read'
+
+    print('info=', info)
+
+    return info
+
 def save_csv(save_path_name, save_dict_csv, csv_columns):
 
     try:
@@ -134,9 +174,13 @@ def save_csv(save_path_name, save_dict_csv, csv_columns):
         print("I/O error")
 
 
-def process_pdfs(thread_id, sess_id, sess_mode):
+def process_pdfs(thread_id, sess_id, sess_mode, sess_file):
     # --спускаемся в директорию--------------------------------------------------------------------^
-    dir_path = os.path.join(os.getcwd(), 'pdf', f"_{sess_id}")  # сюда передаем название исх директории
+    if sess_file == 'pdf':
+        dir_path = os.path.join(os.getcwd(), 'pdf', f"_{sess_id}")  # сюда передаем название исх директории
+    else:
+        dir_path = os.path.join(os.getcwd(), 'doc', f"_{sess_id}")
+
     save_path = os.path.join(os.getcwd(), 'result', f"_{sess_id}")  # сюда передаем название результ директории
 
     # Getting the list of directories
@@ -146,6 +190,8 @@ def process_pdfs(thread_id, sess_id, sess_mode):
     mc = mycache1.create_client()
     # Use the glob module to search for .pdf files in the folder
     pdf_dir = glob.glob(dir_path + "/*.pdf")
+    if sess_file == 'doc':
+        pdf_dir = glob.glob(dir_path + "/*.docx")
     # Checking if the list is empty or not
     if len(pdf_dir) == 0:
         print("Empty pdf directory dont process pdf folder")
@@ -166,10 +212,16 @@ def process_pdfs(thread_id, sess_id, sess_mode):
 
     s_count = 0
     # get list of files (sorted)
-    pdf_files = [f for f in os.listdir(dir_path) if f.endswith('.pdf')]
+    pdf_files = []
+    if sess_file == 'pdf':
+        pdf_files = [f for f in os.listdir(dir_path) if f.endswith('.pdf')]
+        print(f'pdf файлов в директории: {len(pdf_files)}')
+    else:
+        pdf_files = [f for f in os.listdir(dir_path) if f.endswith('.docx')]
+        print(f'docx файлов в директории: {len(pdf_files)}')
+
     pdf_files.sort()
 
-    print(f'pdf файлов в директории: {len(pdf_files)}')
     save_dict_csv = {}
     #progrsse bar
     dx = float(50 / len(pdf_files))
@@ -189,7 +241,10 @@ def process_pdfs(thread_id, sess_id, sess_mode):
                 mode = 2
             try:
                 with open(item_file, 'rb') as f:
-                    item_file_text = extract_text(f)
+                    if sess_file == 'pdf':
+                        item_file_text = extract_text(f)
+                    if sess_file == 'doc':
+                        item_file_text = docx2txt.process(f)
                     # update progress bar
                     progress_new = 50 + int(dx * idx)
                     if progress_new > progress:
@@ -211,7 +266,11 @@ def process_pdfs(thread_id, sess_id, sess_mode):
             #print('text=', item_file_text)
             #mode = 2
             if mode == 1:
-                values = find_values(item_file_text)
+                if sess_file == 'pdf':
+                    values = find_values(item_file_text)
+                if sess_file == 'doc':
+                    values = find_values_doc(item_file_text)
+
                 save_dict_csv[item_file] = values
             else:
                 #text is b/w 'page 1 of 73'
@@ -230,7 +289,10 @@ def process_pdfs(thread_id, sess_id, sess_mode):
 
     #file_name_csv = f"{save_path}/result.csv"
     if mode == 1:
-        csv_columns = ['file', 'invoice_no', 'due_amount', 'entry_no', 'hawb', 'reference']
+        if sess_file == 'pdf':
+            csv_columns = ['file', 'invoice_no', 'due_amount', 'entry_no', 'hawb', 'reference']
+        if sess_file == 'doc':
+            csv_columns = ['file', 'name', 'phone', 'email']
     else:
         file_name_csv = f"{save_path}/result_{timestr}_weekly.csv"
         csv_columns = ['file', 'invoice', 'tot_out', 'house', 'reference']
@@ -238,26 +300,27 @@ def process_pdfs(thread_id, sess_id, sess_mode):
     save_csv(file_name_csv, save_dict_csv, csv_columns)
     print(f'\n{datetime.now()} Обработка завершена. Результат в файле {file_name_csv}')
 
-    # zip folder
-    folder_name = dir_path
-    zip_name = f"{save_path}/pdf.zip"
-    #remove old zip
-    if os.path.exists(zip_name):
-        os.remove(zip_name)
+    if sess_file == 'pdf':
+        # zip folder
+        folder_name = dir_path
+        zip_name = f"{save_path}/pdf.zip"
+        #remove old zip
+        if os.path.exists(zip_name):
+            os.remove(zip_name)
 
-    # create a ZipFile object
-    with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        # iterate over all the files in the folder and add them to the zip file
-        for root, dirs, files in os.walk(folder_name):
-            for file in files:
-                file_path = os.path.join(root, file)
-                arcname = os.path.relpath(file_path, folder_name)
-                zipf.write(file_path, arcname=arcname)
+        # create a ZipFile object
+        with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            # iterate over all the files in the folder and add them to the zip file
+            for root, dirs, files in os.walk(folder_name):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    arcname = os.path.relpath(file_path, folder_name)
+                    zipf.write(file_path, arcname=arcname)
 
-            #for file in files:
-            #    zipf.write(os.path.join(root, file))
+                #for file in files:
+                #    zipf.write(os.path.join(root, file))
 
-    print(f'\n{datetime.now()} Архив zip pdf в файле {zip_name}')
+        print(f'\n{datetime.now()} Архив zip pdf в файле {zip_name}')
 
     for idx, item_file in enumerate(pdf_files):
         if not os.path.isdir(item_file):
